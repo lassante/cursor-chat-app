@@ -5,19 +5,13 @@ import { NewChatDialog } from "./NewChatDialog";
 import { useStore } from "@/store/useStore";
 import { Pin, PinOff, Search, UserPlus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getNameGradient } from "@/lib/helpers";
 
 export const UserList = () => {
-  const { users, pinnedChats, activeChats, user, loadActiveChats } = useStore();
+  const { users, pinnedChats, activeChats } = useStore();
   const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    if (user) {
-      loadActiveChats(user.uid);
-    }
-  }, [user, loadActiveChats]);
 
   const filterUsers = (userList: ChatUser[]) => {
     return userList.filter(
@@ -29,7 +23,6 @@ export const UserList = () => {
 
   // Filter users to only show active chats
   const activeUsers = users.filter((u) => activeChats.includes(u.id));
-
   const pinnedUsers = filterUsers(
     activeUsers.filter((user) => pinnedChats.includes(user.id))
   );

@@ -18,8 +18,8 @@ import {
   query,
   where,
   onSnapshot,
-  setDoc,
   serverTimestamp,
+  updateDoc,
 } from "firebase/firestore";
 import { ChatUser } from "@/types/chat";
 import { StoreState } from "../useStore";
@@ -54,17 +54,11 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
   setError: (error) => set({ error }),
   updateUserStatus: async (user, isOnline) => {
     if (!user) return;
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        name: user.displayName || user.email?.split("@")[0],
-        email: user.email,
-        photoURL: user.photoURL,
-        isOnline,
-        lastSeen: serverTimestamp(),
-      },
-      { merge: true }
-    );
+
+    await updateDoc(doc(db, "users", user.uid), {
+      isOnline,
+      lastSeen: serverTimestamp(),
+    });
   },
   subscribeToUsers: (currentUser) => {
     const q = query(
@@ -161,22 +155,24 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
       console.error("Error during logout:", error);
     }
   },
+
   initialize: () => {
     const {
       updateUserStatus,
       subscribeToUsers,
-      loadActiveChats,
+      subscribeToActiveChats,
       subscribeToAllMessages,
     } = get();
     let userUnsubscribe: (() => void) | null = null;
     let messagesUnsubscribe: (() => void) | null = null;
+    let activeChatsUnsubscribe: (() => void) | null = null;
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       set({ user, loading: false });
 
       if (user) {
         await updateUserStatus(user, true);
-        await loadActiveChats(user.uid);
+        activeChatsUnsubscribe = subscribeToActiveChats(user.uid);
         userUnsubscribe = subscribeToUsers(user);
         messagesUnsubscribe = subscribeToAllMessages(user.uid);
       } else {
@@ -188,6 +184,10 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
           messagesUnsubscribe();
           messagesUnsubscribe = null;
         }
+        if (activeChatsUnsubscribe) {
+          activeChatsUnsubscribe();
+          activeChatsUnsubscribe = null;
+        }
       }
     });
 
@@ -195,6 +195,7 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
       unsubscribe();
       if (userUnsubscribe) userUnsubscribe();
       if (messagesUnsubscribe) messagesUnsubscribe();
+      if (activeChatsUnsubscribe) activeChatsUnsubscribe();
     };
   },
 });

@@ -10,7 +10,7 @@ import {
   addDoc,
   serverTimestamp,
   doc,
-  setDoc,
+  updateDoc,
 } from "firebase/firestore";
 import { StoreState } from "../useStore";
 import { toast } from "sonner";
@@ -33,7 +33,7 @@ export interface ChatSlice {
     text: string
   ) => Promise<void>;
   togglePinnedChat: (chatId: string) => Promise<void>;
-  loadActiveChats: (userId: string) => () => void;
+  subscribeToActiveChats: (userId: string) => () => void;
   addActiveChat: (chatId: string) => Promise<void>;
   removeChat: (chatId: string) => Promise<void>;
   markChatAsRead: (chatId: string) => void;
@@ -66,7 +66,7 @@ export const createChatSlice: StateCreator<StoreState, [], [], ChatSlice> = (
     );
 
     // Subscribe to messages
-    const unsubMessages = onSnapshot(q, (snapshot) => {
+    return onSnapshot(q, (snapshot) => {
       const messages = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -74,20 +74,6 @@ export const createChatSlice: StateCreator<StoreState, [], [], ChatSlice> = (
       })) as Message[];
       set({ messages });
     });
-
-    // Subscribe to pinned chats and active chats
-    const unsubUserData = onSnapshot(doc(db, "users", currentUserId), (doc) => {
-      const data = doc.data();
-      set({
-        pinnedChats: data?.pinnedChats || [],
-        activeChats: data?.activeChats || [],
-      });
-    });
-
-    return () => {
-      unsubMessages();
-      unsubUserData();
-    };
   },
   subscribeToAllMessages: (currentUserId) => {
     // Subscribe to all messages where the user is the receiver
@@ -143,7 +129,7 @@ export const createChatSlice: StateCreator<StoreState, [], [], ChatSlice> = (
       });
     });
   },
-  loadActiveChats: (userId: string) => {
+  subscribeToActiveChats: (userId: string) => {
     // Subscribe to user document to get active chats
     const unsubscribe = onSnapshot(doc(db, "users", userId), (doc) => {
       const data = doc.data();
@@ -174,13 +160,11 @@ export const createChatSlice: StateCreator<StoreState, [], [], ChatSlice> = (
 
     if (!activeChats.includes(chatId)) {
       const newActiveChats = [...activeChats, chatId];
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          activeChats: newActiveChats,
-        },
-        { merge: true }
-      );
+
+      await updateDoc(doc(db, "users", user.uid), {
+        activeChats: newActiveChats,
+      });
+
       set({ activeChats: newActiveChats });
     }
   },
@@ -191,16 +175,14 @@ export const createChatSlice: StateCreator<StoreState, [], [], ChatSlice> = (
 
     const newActiveChats = activeChats.filter((id) => id !== chatId);
     const newPinnedChats = pinnedChats.filter((id) => id !== chatId);
-    const { [chatId]: _, ...newUnreadMessages } = unreadMessages;
 
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        activeChats: newActiveChats,
-        pinnedChats: newPinnedChats,
-      },
-      { merge: true }
-    );
+    const newUnreadMessages = { ...unreadMessages };
+    delete newUnreadMessages[chatId];
+
+    await updateDoc(doc(db, "users", user.uid), {
+      activeChats: newActiveChats,
+      pinnedChats: newPinnedChats,
+    });
 
     // If the removed chat was selected, clear the selection
     if (selectedChatId === chatId) {
@@ -232,13 +214,9 @@ export const createChatSlice: StateCreator<StoreState, [], [], ChatSlice> = (
       ? pinnedChats.filter((id) => id !== chatId)
       : [...pinnedChats, chatId];
 
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        pinnedChats: newPinnedChats,
-      },
-      { merge: true }
-    );
+    await updateDoc(doc(db, "users", user.uid), {
+      pinnedChats: newPinnedChats,
+    });
 
     set({ pinnedChats: newPinnedChats });
   },
