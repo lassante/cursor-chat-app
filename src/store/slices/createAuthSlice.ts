@@ -24,6 +24,14 @@ import {
 import { ChatUser } from "@/types/chat";
 import { StoreState } from "../useStore";
 
+type Unsubscribe = () => void;
+
+interface Subscriptions {
+  users: Unsubscribe | null;
+  messages: Unsubscribe | null;
+  activeChats: Unsubscribe | null;
+}
+
 export interface AuthSlice {
   user: User | null;
   users: ChatUser[];
@@ -36,9 +44,9 @@ export interface AuthSlice {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  initialize: () => () => void;
+  initialize: () => Unsubscribe;
   updateUserStatus: (user: User | null, isOnline: boolean) => Promise<void>;
-  subscribeToUsers: (currentUser: User) => () => void;
+  subscribeToUsers: (currentUser: User) => Unsubscribe;
 }
 
 export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
@@ -178,47 +186,53 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
       subscribeToActiveChats,
       subscribeToAllMessages,
     } = get();
-    let userUnsubscribe: (() => void) | null = null;
-    let messagesUnsubscribe: (() => void) | null = null;
-    let activeChatsUnsubscribe: (() => void) | null = null;
 
+    // Initialize subscriptions object
+    const subscriptions: Subscriptions = {
+      users: null,
+      messages: null,
+      activeChats: null,
+    };
+
+    // Set initial loading state
     set({ loading: true });
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    // Helper function to cleanup subscriptions
+    const cleanup = () => {
+      Object.values(subscriptions).forEach((unsubscribe) => {
+        if (unsubscribe) unsubscribe();
+      });
+    };
+
+    // Helper function to setup subscriptions for authenticated user
+    const setupSubscriptions = async (user: User) => {
+      try {
+        await updateUserStatus(user, true);
+        subscriptions.activeChats = subscribeToActiveChats(user.uid);
+        subscriptions.users = subscribeToUsers(user);
+        subscriptions.messages = subscribeToAllMessages(user.uid);
+      } catch (error) {
+        console.error("Error setting up subscriptions:", error);
+        set({ loading: false });
+      }
+    };
+
+    // Main auth state listener
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       set({ user });
 
       if (user) {
-        try {
-          await updateUserStatus(user, true);
-          activeChatsUnsubscribe = subscribeToActiveChats(user.uid);
-          userUnsubscribe = subscribeToUsers(user);
-          messagesUnsubscribe = subscribeToAllMessages(user.uid);
-        } catch (error) {
-          console.error("Error during initialization:", error);
-          set({ loading: false });
-        }
+        await setupSubscriptions(user);
       } else {
-        if (userUnsubscribe) {
-          userUnsubscribe();
-          userUnsubscribe = null;
-        }
-        if (messagesUnsubscribe) {
-          messagesUnsubscribe();
-          messagesUnsubscribe = null;
-        }
-        if (activeChatsUnsubscribe) {
-          activeChatsUnsubscribe();
-          activeChatsUnsubscribe = null;
-        }
+        cleanup();
         set({ loading: false });
       }
     });
 
+    // Return cleanup function
     return () => {
-      unsubscribe();
-      if (userUnsubscribe) userUnsubscribe();
-      if (messagesUnsubscribe) messagesUnsubscribe();
-      if (activeChatsUnsubscribe) activeChatsUnsubscribe();
+      unsubscribeAuth();
+      cleanup();
     };
   },
 });
