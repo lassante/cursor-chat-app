@@ -57,25 +57,13 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 5. Set up Firestore indexes:
 
-   a. Install Firebase CLI globally:
-
-   ```bash
-   npm install -g firebase-tools
-   ```
-
-   b. Login to Firebase:
+   a. Login to Firebase:
 
    ```bash
    firebase login
    ```
 
-   c. Initialize Firebase in your project:
-
-   ```bash
-   firebase init
-   ```
-
-   d. Deploy the indexes:
+   b. Deploy the indexes:
 
    ```bash
    firebase deploy --only firestore:indexes
