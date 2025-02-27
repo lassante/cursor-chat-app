@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStore } from "@/store/useStore";
@@ -12,20 +10,7 @@ export const AuthTabs = () => {
   return (
     <div className="space-y-6 w-full">
       <Tabs defaultValue="signin" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-neutral-100/20 dark:bg-background/60">
-          <TabsTrigger
-            value="signin"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-primary/20"
-          >
-            Sign In
-          </TabsTrigger>
-          <TabsTrigger
-            value="signup"
-            className="data-[state=active]:bg-white dark:data-[state=active]:bg-primary/20"
-          >
-            Create Account
-          </TabsTrigger>
-        </TabsList>
+        <AuthTabsList />
 
         <TabsContent value="signin">
           <SignInTab />
@@ -58,5 +43,14 @@ export const AuthTabs = () => {
 
       {error && <p className="text-sm text-red-500 text-center">{error}</p>}
     </div>
+  );
+};
+
+const AuthTabsList = () => {
+  return (
+    <TabsList className="grid w-full grid-cols-2 bg-neutral-100/20 dark:bg-background/60">
+      <TabsTrigger value="signin">Sign In</TabsTrigger>
+      <TabsTrigger value="signup">Create Account</TabsTrigger>
+    </TabsList>
   );
 };
