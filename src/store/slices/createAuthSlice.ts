@@ -20,6 +20,8 @@ import {
   onSnapshot,
   serverTimestamp,
   updateDoc,
+  setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { ChatUser } from "@/types/chat";
 import { StoreState } from "../useStore";
@@ -47,6 +49,7 @@ export interface AuthSlice {
   initialize: () => Unsubscribe;
   updateUserStatus: (user: User | null, isOnline: boolean) => Promise<void>;
   subscribeToUsers: (currentUser: User) => Unsubscribe;
+  initializeUserDocument: (user: User) => Promise<void>;
 }
 
 export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
@@ -60,6 +63,24 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  initializeUserDocument: async (user) => {
+    const userRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists()) {
+      // Initialize new user document with default values
+      await setDoc(userRef, {
+        id: user.uid,
+        name: user.displayName || user.email?.split("@")[0] || "Unknown",
+        email: user.email || "",
+        photoURL: user.photoURL || "",
+        isOnline: true,
+        lastSeen: serverTimestamp(),
+        activeChats: [],
+        pinnedChats: [],
+      });
+    }
+  },
   updateUserStatus: async (user, isOnline) => {
     if (!user) return;
 
@@ -178,13 +199,13 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
       console.error("Error during logout:", error);
     }
   },
-
   initialize: () => {
     const {
       updateUserStatus,
       subscribeToUsers,
       subscribeToActiveChats,
       subscribeToAllMessages,
+      initializeUserDocument,
     } = get();
 
     // Initialize subscriptions object
@@ -207,6 +228,10 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
     // Helper function to setup subscriptions for authenticated user
     const setupSubscriptions = async (user: User) => {
       try {
+        // Initialize user document first
+        await initializeUserDocument(user);
+
+        // Then set up online status and subscriptions
         await updateUserStatus(user, true);
         subscriptions.activeChats = subscribeToActiveChats(user.uid);
         subscriptions.users = subscribeToUsers(user);
