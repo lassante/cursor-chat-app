@@ -40,7 +40,7 @@ npm install
 
    - Go to [Firebase Console](https://console.firebase.google.com)
    - Create a new project
-   - Enable Authentication (Google provider)
+   - Enable Authentication (Google provider, Email/Password)
    - Create a Firestore database
    - Get your Firebase configuration
 
@@ -55,13 +55,39 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
-5. Run the development server:
+5. Set up Firestore indexes:
+
+   a. Install Firebase CLI globally:
+
+   ```bash
+   npm install -g firebase-tools
+   ```
+
+   b. Login to Firebase:
+
+   ```bash
+   firebase login
+   ```
+
+   c. Initialize Firebase in your project:
+
+   ```bash
+   firebase init
+   ```
+
+   d. Deploy the indexes:
+
+   ```bash
+   firebase deploy --only firestore:indexes
+   ```
+
+6. Run the development server:
 
 ```bash
 npm run dev
 ```
 
-6. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+7. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Firebase Security Rules
 
