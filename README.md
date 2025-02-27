@@ -2,6 +2,8 @@
 
 A modern real-time chat application built with Next.js, Firebase, and Tailwind CSS.
 
+![Chatly Application](https://github.com/user-attachments/assets/9f905830-27ce-4456-9566-cfa6446bd49e)
+
 ## Features
 
 - Real-time messaging
