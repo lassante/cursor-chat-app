@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getNameGradient } from "@/lib/helpers";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const UserList = () => {
-  const { users, pinnedChats, activeChats } = useStore();
+  const { users, pinnedChats, activeChats, loading } = useStore();
   const [search, setSearch] = useState("");
 
   const filterUsers = (userList: ChatUser[]) => {
@@ -53,32 +54,60 @@ export const UserList = () => {
         </NewChatDialog>
       </div>
 
-      {pinnedUsers.length > 0 && (
-        <div className="space-y-2 mt-4">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            Pinned Chats
-          </h3>
-          {pinnedUsers.map((user) => (
-            <ChatItem key={user.id} user={user} isPinned={true} />
+      {loading ? (
+        <div className="space-y-3 mt-4">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <LoadingChatItem key={i} />
           ))}
         </div>
-      )}
+      ) : (
+        <>
+          {pinnedUsers.length > 0 && (
+            <div className="space-y-2 mt-4">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Pinned Chats
+              </h3>
+              {pinnedUsers.map((user) => (
+                <ChatItem key={user.id} user={user} isPinned={true} />
+              ))}
+            </div>
+          )}
 
-      <div className="space-y-2 mt-4">
-        <h3 className="text-sm font-medium text-muted-foreground">All Chats</h3>
-        {unpinnedUsers.map((user) => (
-          <ChatItem key={user.id} user={user} isPinned={false} />
-        ))}
-        {unpinnedUsers.length === 0 && activeUsers.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No chats yet. Start a new chat to begin messaging.
-          </p>
-        )}
-        {unpinnedUsers.length === 0 && activeUsers.length > 0 && search && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            No chats found
-          </p>
-        )}
+          <div className="space-y-2 mt-4">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              All Chats
+            </h3>
+            {unpinnedUsers.map((user) => (
+              <ChatItem key={user.id} user={user} isPinned={false} />
+            ))}
+            {unpinnedUsers.length === 0 && activeUsers.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No chats yet. Start a new chat to begin messaging.
+              </p>
+            )}
+            {unpinnedUsers.length === 0 && activeUsers.length > 0 && search && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No chats found
+              </p>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const LoadingChatItem = () => {
+  return (
+    <div className="flex items-stretch rounded-md overflow-hidden group bg-secondary/50">
+      <div className="flex-1 justify-start p-2 h-auto rounded-none">
+        <div className="flex items-center space-x-3 w-full">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="flex flex-col items-start flex-1 space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -61,6 +61,8 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
     });
   },
   subscribeToUsers: (currentUser) => {
+    set({ loading: true });
+
     const q = query(
       collection(db, "users"),
       where("email", "!=", currentUser.email)
@@ -79,11 +81,11 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
         } as ChatUser;
       });
 
-      set({ users: usersList });
+      set({ users: usersList, loading: false });
     });
   },
   signInWithGoogle: async () => {
-    set({ error: null });
+    set({ error: null, loading: true });
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -96,18 +98,22 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
             set({
               error:
                 "Failed to sign in. Please check your popup blocker settings.",
+              loading: false,
             });
             console.error("Error signing in with redirect:", redirectError);
           }
         } else {
-          set({ error: "Failed to sign in. Please try again." });
+          set({
+            error: "Failed to sign in. Please try again.",
+            loading: false,
+          });
           console.error("Error signing in:", error);
         }
       }
     }
   },
   signInWithEmail: async (email: string, password: string) => {
-    set({ error: null });
+    set({ error: null, loading: true });
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -115,30 +121,39 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
         switch (error.code) {
           case AuthErrorCodes.USER_DELETED:
           case AuthErrorCodes.INVALID_PASSWORD:
-            set({ error: "Invalid email or password" });
+            set({ error: "Invalid email or password", loading: false });
             break;
           default:
-            set({ error: "Failed to sign in. Please try again." });
+            set({
+              error: "Failed to sign in. Please try again.",
+              loading: false,
+            });
         }
         console.error("Error signing in with email:", error);
       }
     }
   },
   signUpWithEmail: async (email: string, password: string) => {
-    set({ error: null });
+    set({ error: null, loading: true });
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (error) {
       if (error instanceof FirebaseError) {
         switch (error.code) {
           case AuthErrorCodes.EMAIL_EXISTS:
-            set({ error: "Email already in use" });
+            set({ error: "Email already in use", loading: false });
             break;
           case AuthErrorCodes.WEAK_PASSWORD:
-            set({ error: "Password should be at least 6 characters" });
+            set({
+              error: "Password should be at least 6 characters",
+              loading: false,
+            });
             break;
           default:
-            set({ error: "Failed to create account. Please try again." });
+            set({
+              error: "Failed to create account. Please try again.",
+              loading: false,
+            });
         }
         console.error("Error creating account:", error);
       }
@@ -167,14 +182,21 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
     let messagesUnsubscribe: (() => void) | null = null;
     let activeChatsUnsubscribe: (() => void) | null = null;
 
+    set({ loading: true });
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      set({ user, loading: false });
+      set({ user });
 
       if (user) {
-        await updateUserStatus(user, true);
-        activeChatsUnsubscribe = subscribeToActiveChats(user.uid);
-        userUnsubscribe = subscribeToUsers(user);
-        messagesUnsubscribe = subscribeToAllMessages(user.uid);
+        try {
+          await updateUserStatus(user, true);
+          activeChatsUnsubscribe = subscribeToActiveChats(user.uid);
+          userUnsubscribe = subscribeToUsers(user);
+          messagesUnsubscribe = subscribeToAllMessages(user.uid);
+        } catch (error) {
+          console.error("Error during initialization:", error);
+          set({ loading: false });
+        }
       } else {
         if (userUnsubscribe) {
           userUnsubscribe();
@@ -188,6 +210,7 @@ export const createAuthSlice: StateCreator<StoreState, [], [], AuthSlice> = (
           activeChatsUnsubscribe();
           activeChatsUnsubscribe = null;
         }
+        set({ loading: false });
       }
     });
 
