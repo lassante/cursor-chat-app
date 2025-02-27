@@ -1,4 +1,5 @@
-import { useStore } from "@/store/useStore";
+"use client";
+
 import { MessagesPanel } from "./MessagesPanel";
 import { ChatArea } from "./ChatArea";
 import { Button } from "@/components/ui/button";
@@ -7,10 +8,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const ChatLayout = () => {
-  const { user } = useStore();
   const [showPanel, setShowPanel] = useState(false);
-
-  if (!user) return null;
 
   return (
     <div className="flex h-full relative">

@@ -15,8 +15,6 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [showSidebar, setShowSidebar] = useState(false);
 
-  if (!user) return children;
-
   return (
     <div className="flex h-screen bg-[conic-gradient(at_top_right,_var(--tw-gradient-stops))] from-indigo-100 via-purple-100 to-pink-100 dark:from-indigo-950/50 dark:via-purple-900/30 dark:to-fuchsia-950/50">
       {/* Mobile Menu Button */}
@@ -66,17 +64,17 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="border-t border-border/40 pt-4 mt-4">
           <div className="flex items-center gap-3 px-3">
             <Avatar>
-              <AvatarImage src={user.photoURL || undefined} />
+              <AvatarImage src={user?.photoURL || undefined} />
               <AvatarFallback>
-                {user.displayName?.charAt(0) || user.email?.charAt(0)}
+                {user?.displayName?.charAt(0) || user?.email?.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {user.displayName || user.email?.split("@")[0]}
+                {user?.displayName || user?.email?.split("@")[0]}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {user.email}
+                {user?.email}
               </p>
             </div>
             <Button

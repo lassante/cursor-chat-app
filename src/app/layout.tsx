@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthInitializer } from "@/components/auth/AuthInitializer";
-import { MainLayout } from "@/components/layout/MainLayout";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Toaster } from "sonner";
 
@@ -27,9 +26,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthInitializer>
-            <MainLayout>{children}</MainLayout>
-          </AuthInitializer>
+          <AuthInitializer>{children}</AuthInitializer>
           <Toaster richColors closeButton position="top-right" />
         </ThemeProvider>
       </body>
