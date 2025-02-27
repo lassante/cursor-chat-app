@@ -27,7 +27,7 @@ A modern real-time chat application built with Next.js, Firebase, and Tailwind C
 
 ```bash
 git clone <repository-url>
-cd chatly-app
+cd cursor-chat-app
 ```
 
 2. Install dependencies:
