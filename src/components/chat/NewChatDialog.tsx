@@ -9,11 +9,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { ChatUser } from "@/types/chat";
 import { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search } from "lucide-react";
 import { useStore } from "@/store/useStore";
-import { cn } from "@/lib/utils";
-import { getNameGradient } from "@/lib/helpers";
+import { UserAvatar } from "../ui/user-avatar";
 
 interface NewChatDialogProps {
   children?: React.ReactNode;
@@ -70,23 +68,15 @@ export const NewChatDialog = ({ children }: NewChatDialogProps) => {
               onClick={() => startChat(user)}
             >
               <div className="flex items-center space-x-3">
-                <Avatar>
-                  <AvatarImage src={user.photoURL} />
-                  <AvatarFallback
-                    className={cn(
-                      "bg-gradient-to-br text-white",
-                      getNameGradient(user.name)
-                    )}
-                  >
-                    {user.name?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar user={user} />
+
                 <div className="flex flex-col items-start">
                   <span className="font-medium">{user.name}</span>
                   <span className="text-xs text-muted-foreground">
                     {user.email}
                   </span>
                 </div>
+
                 {user.isOnline && (
                   <div className="w-2 h-2 bg-green-500 rounded-full ml-auto" />
                 )}
